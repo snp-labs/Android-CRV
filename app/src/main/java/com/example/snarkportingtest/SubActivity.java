@@ -63,7 +63,7 @@ public class SubActivity extends AppCompatActivity {
         if(task.equals("vote")) {
             Log.d("task", task);
             try {
-                String text = loc + task + "arith.txt";
+                String text = loc + task + "arith.dat";
                 CopyIfNotExist(R.raw.votearith, text);
 //            Log.d("test", "onCreate: "+text);
             } catch (IOException e) {
@@ -72,7 +72,7 @@ public class SubActivity extends AppCompatActivity {
             }
 
             try {
-                String text = loc + task + "in.txt";
+                String text = loc + task + "in.dat";
                 CopyIfNotExist(R.raw.votein, text);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
