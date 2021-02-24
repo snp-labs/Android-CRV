@@ -284,7 +284,7 @@ public:
     virtual ~Variable();
 
     ::std::string name() const;
-
+    VarIndex_t index() { return index_; }
     /// A functor for strict ordering of Variables. Needed for STL containers.
     /// This is not an ordering of Variable assignments and has no semantic meaning.
     struct VariableStrictOrder {
@@ -438,6 +438,7 @@ public:
     LinearTerm(const Variable& v, long n) : variable_(v), coeff_(n) {}
     LinearTerm operator-() const {return LinearTerm(variable_, -coeff_);}
     LinearTerm& operator*=(const FElem& other) {coeff_ *= other; return *this;}
+    LinearTerm& operator+=(const LinearTerm& other) {coeff_ += other.coeff_; return *this;}
     FieldType fieldtype() const {return coeff_.fieldType();}
     ::std::string asString() const;
     FElem eval(const VariableAssignment& assignment) const;

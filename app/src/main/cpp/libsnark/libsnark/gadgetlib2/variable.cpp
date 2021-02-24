@@ -453,7 +453,20 @@ FElem LinearTerm::eval(const VariableAssignment& assignment) const {
 /*************************************************************************************************/
 
 LinearCombination& LinearCombination::operator+=(const LinearCombination& other) {
-    linearTerms_.insert(linearTerms_.end(), other.linearTerms_.cbegin(), other.linearTerms_.cend());
+    for(const LinearTerm& lt2 : other.linearTerms_) {
+        bool flag = false;
+        for( LinearTerm& lt1 : linearTerms_) {
+            if(lt2.variable().index()==lt1.variable().index()) {
+                lt1 += lt2;
+                flag = true;
+                break;
+            }
+        }
+        if(!flag)
+            linearTerms_.push_back(lt2);
+    }
+
+    //    linearTerms_.insert(linearTerms_.end(), other.linearTerms_.cbegin(), other.linearTerms_.cend());
     constant_ += other.constant_;
     return *this;
 }
