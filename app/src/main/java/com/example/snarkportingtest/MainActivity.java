@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SubActivity.class);
-                intent.putExtra("task","vote");
+                intent.putExtra("task","register");
                 intent.putExtra("mode","all");
                 startActivityForResult(intent, SNARK_CODE);
             }

@@ -82,7 +82,7 @@ public class SubActivity extends AppCompatActivity {
         if(task.equals("register")) {
             Log.d("task", task);
             try {
-                String text = loc + task + "arith.txt";
+                String text = loc + task + "arith.dat";
                 CopyIfNotExist(R.raw.registerarith, text);
 //            Log.d("test", "onCreate: "+text);
             } catch (IOException e) {
@@ -91,7 +91,7 @@ public class SubActivity extends AppCompatActivity {
             }
 
             try {
-                String text = loc + task + "in.txt";
+                String text = loc + task + "in.dat";
                 CopyIfNotExist(R.raw.registerin, text);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
@@ -101,7 +101,7 @@ public class SubActivity extends AppCompatActivity {
         if(task.equals("tally")) {
             Log.d("task", task);
             try {
-                String text = loc + task + "arith.txt";
+                String text = loc + task + "arith.dat";
                 CopyIfNotExist(R.raw.tallyarith, text);
 //            Log.d("test", "onCreate: "+text);
             } catch (IOException e) {
@@ -110,7 +110,7 @@ public class SubActivity extends AppCompatActivity {
             }
 
             try {
-                String text = loc + task + "in.txt";
+                String text = loc + task + "in.dat";
                 CopyIfNotExist(R.raw.tallyin, text);
             } catch (IOException e) {
                 // TODO Auto-generated catch block

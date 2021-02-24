@@ -68,7 +68,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
         path2 = "/data/data/com.example.snarkportingtest/files/votein.dat";
     }
     else if(strcmp("tally", task_) == 0) {
-        path1 = "/data/data/com.example.snarkportingtest/files/allyarith.dat";
+        path1 = "/data/data/com.example.snarkportingtest/files/tallyarith.dat";
         path2 = "/data/data/com.example.snarkportingtest/files/tallyin.dat";
     }
     // Read the circuit, evaluate, and translate constraints
