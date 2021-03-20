@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">snarkportingtest</string>
-    <string name="msg_token_fmt" translatable="false">토큰 : %s</string>
-    <string name="msg_subscribed">msg_subscribed</string>
-    <string name="msg_subscribe_failed">msg_subscribe_failed</string>
-</resources>
