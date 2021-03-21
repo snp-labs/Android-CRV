@@ -1,3 +1,3 @@
-# module-snark
+# zkSnark
 
-A description of this package.
+zkSnark swift package.
