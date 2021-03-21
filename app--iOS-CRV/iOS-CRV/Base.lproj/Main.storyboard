@@ -44,6 +44,7 @@
                     </view>
                     <connections>
                         <outlet property="picker" destination="X7C-eA-80P" id="C1L-0h-x8J"/>
+                        <outlet property="runButton" destination="nyU-42-tzv" id="pLx-0d-eah"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

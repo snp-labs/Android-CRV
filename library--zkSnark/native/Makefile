@@ -10,40 +10,14 @@ BUILD_DIR  			:=${BUILD_WORKSPACE}${target}/
 INSTALL_DIR 		:=${PWD}/lib/${target}/
 LIBCXX_DIR 			:=$(shell xcrun --show-sdk-platform-path)/../../Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
 
-ifeq ($(strip $(target)),ios)
-SDK_DIR :=$(shell xcrun --show-sdk-path --sdk iphoneos)
-else ifeq ($(strip $(target)),ios_sim)
-SDK_DIR :=$(shell xcrun --show-sdk-path --sdk iphonesimulator)
-endif
-
-
-C_ARGUMENTS 		:= -Wall -Wextra -Wfatal-errors -ggdb3 -O2 
-CXX_ARGUMENTS 		:= ${C_ARGUMENTS} -stdlib=libc++ -std=c++11
-SYSROOT_OPT 		:= -isystem=${SDK_DIR} -isysroot ${SDK_DIR} -I${LIBCXX_DIR} 
-
-MAKE_CFLAGS 		= ${C_ARGUMENTS} ${SYSROOT_OPT} 
-MAKE_CXXFLAGS 		= ${CXX_ARGUMENTS} ${SYSROOT_OPT} 
-
-
 
 ifeq ($(strip $(target)),ios)
-	
+
 TRIPLE 				:=arm64-apple-ios
 CONF_TRIPLE 		:=arm64-apple-ios
 SDK_DIR 			:=$(shell xcrun --show-sdk-path --sdk iphoneos)
 SYSTEM_NAME 		:=iOS
 SYSTEM_PROCESSOR    :=arm64
-
-MAKE_CFLAGS 		+= -target ${TRIPLE} -fembed-bitcode 
-MAKE_CXXFLAGS 		+= -target ${TRIPLE} -fembed-bitcode 
-
-GMP_CONF_EXTRA_OPT 	:=MPN_PATH="generic" --enable-cxx  --host=${CONF_TRIPLE} 
-
-SSL_EXTRA_CONF_OPT 	:=ios64-cross enable-ec_nistp_64_gcc_128
-SSL_EXTRA_MAKE_OPT 	:=-miphoneos-version-min=7.0 
-
-FF_SNARK_CFLAGS 	:= -fembed-bitcode ${C_ARGUMENTS} 
-FF_SNARK_CXXFLAGS 	:= -fembed-bitcode ${CXX_ARGUMENTS} -I${LIBCXX_DIR} 
 
 else ifeq ($(strip $(target)),ios_sim)
 
@@ -53,8 +27,34 @@ SDK_DIR 			:=$(shell xcrun --show-sdk-path --sdk iphonesimulator)
 SYSTEM_NAME 		:=iOS
 SYSTEM_PROCESSOR    :=x86_64
 
-MAKE_CFLAGS 		+= -target ${TRIPLE}
-MAKE_CXXFLAGS 		+= -target ${TRIPLE} 
+endif
+
+
+
+C_ARGUMENTS 		= -target ${TRIPLE} -DSYSTEM_NAME_${SYSTEM_NAME} -DSCHEME_${scheme} 
+C_ARGUMENTS 		+= -Wall -Wextra -Wfatal-errors -ggdb3 -O2
+CXX_ARGUMENTS 		:= ${C_ARGUMENTS} -stdlib=libc++ -std=c++11 
+SYSROOT_OPT 		:= -isystem=${SDK_DIR} -isysroot ${SDK_DIR} -I${LIBCXX_DIR} 
+
+MAKE_CFLAGS 		= ${C_ARGUMENTS} ${SYSROOT_OPT} 
+MAKE_CXXFLAGS 		= ${CXX_ARGUMENTS} ${SYSROOT_OPT} 
+
+
+
+ifeq ($(strip $(target)),ios)
+
+MAKE_CFLAGS 		+= -fembed-bitcode 
+MAKE_CXXFLAGS 		+= -fembed-bitcode 
+
+GMP_CONF_EXTRA_OPT 	:= MPN_PATH="generic" --enable-cxx  --host=${CONF_TRIPLE} 
+
+SSL_EXTRA_CONF_OPT 	:= ios64-cross enable-ec_nistp_64_gcc_128
+SSL_EXTRA_MAKE_OPT 	:= -miphoneos-version-min=7.0 
+
+FF_SNARK_CFLAGS 	:= -fembed-bitcode ${C_ARGUMENTS} 
+FF_SNARK_CXXFLAGS 	:= -fembed-bitcode ${CXX_ARGUMENTS} -I${LIBCXX_DIR} 
+
+else ifeq ($(strip $(target)),ios_sim)
 
 GMP_CONF_EXTRA_OPT 	:=MPN_PATH="x86_64 generic" --enable-cxx
 
@@ -155,7 +155,7 @@ make_ssl : check_target_arg ;
 #
 # 	Rebuild libff and libsnark
 #
-FF_SNARK_BUILD_DIR 		:=${BUILD_DIR}ff_snark
+FF_SNARK_BUILD_DIR 		:=${BUILD_DIR}${scheme}_ff_snark
 FF_SNARK_INCLUDE_DIR 	= ${PWD} ${PWD}/depends ${INSTALL_DIR}include
 FF_SNARK_INCLUDE_DIR 	+= ${PWD}/../wrapper ${LIBCXX_DIR}  
 
@@ -176,14 +176,14 @@ configure_ff_snark : check_target_arg ${BUILD_DIR} ;
 	-D SYSROOT="${SDK_DIR}" \
 	-D C_FLAGS="${FF_SNARK_CFLAGS}" \
 	-D CXX_FLAGS="${FF_SNARK_CXXFLAGS}" \
-	-D INSTALL_DIR="${INSTALL_DIR}" \
+	-D INSTALL_DIR="${PWD}/lib/${target}_${scheme}" \
 	-D I_DIR_LIST="${I_DIR_LIST}" \
 	-S . -B ${FF_SNARK_BUILD_DIR} 
 
 
 make_ff_snark : check_target_arg ;
 	@echo "\n\n--> Build libff and libsnark "
-	cmake --build ${FF_SNARK_BUILD_DIR} -j
+	cmake --build ${FF_SNARK_BUILD_DIR} ${MAKE_JOBS} 
 	cmake --install ${FF_SNARK_BUILD_DIR}
 
 
@@ -192,22 +192,33 @@ make_ff_snark : check_target_arg ;
 
 #
 # 	Create and copy universal static library
-# 	to application (iOS) project folder
 #
-
-iOS_APP_DIR :=../../app--iOS-CRV/iOS-CRV/
-
 install_snark_link_libs :
-	libtool -static lib/*/libsnark.a      -o ${iOS_APP_DIR}libsnark.a
-	libtool -static lib/*/libff.a         -o ${iOS_APP_DIR}libff.a
-	libtool -static lib/*/lib/libgmp.a    -o ${iOS_APP_DIR}libgmp.a
-	libtool -static lib/*/lib/libgmpxx.a  -o ${iOS_APP_DIR}libgmpxx.a
-	libtool -static lib/*/lib/libssl.a    -o ${iOS_APP_DIR}libssl.a
-	libtool -static lib/*/lib/libcrypto.a -o ${iOS_APP_DIR}libcrypto.a
-
-
-
-
+	libtool -static \
+		lib/ios_release/libsnark.a \
+		lib/ios_sim_release/libsnark.a \
+		-o ../archive-release/libsnark.a
+	libtool -static \
+		lib/ios_debug/libsnark.a \
+		lib/ios_sim_debug/libsnark.a \
+		-o ../archive-debug/libsnark.a
+	libtool -static \
+		lib/ios_release/libff.a \
+		lib/ios_sim_release/libff.a \
+		-o ../archive-release/libff.a
+	libtool -static \
+		lib/ios_debug/libff.a \
+		lib/ios_sim_debug/libff.a \
+		-o ../archive-debug/libff.a	
+	libtool -static lib/*/lib/libgmp.a    	 -o ../archive-release/libgmp.a
+	libtool -static lib/*/lib/libgmpxx.a     -o ../archive-release/libgmpxx.a
+	libtool -static lib/*/lib/libssl.a       -o ../archive-release/libssl.a
+	libtool -static lib/*/lib/libcrypto.a    -o ../archive-release/libcrypto.a
+	cp ../archive-release/libgmp.a \
+		../archive-release/libgmpxx.a \
+		../archive-release/libssl.a \
+		../archive-release/libcrypto.a \
+		../archive-debug/
 
 
 
@@ -216,14 +227,19 @@ install_snark_link_libs :
 # 	$ make batch_build_all
 #
 
+clean_all :
+	rm -rf build_env ; mkdir build_env
+	rm -rf lib       ; mkdir lib 
+
 batch_build_target : check_target_arg ;
-	@echo "\n\n\n" ; rm -rf lib/${target} 
 	@echo "\n\n\n" ; make target=${target} configure_gmp
 	@echo "\n\n\n" ; make target=${target} make_gmp 
 	@echo "\n\n\n" ; make target=${target} configure_ssl 
 	@echo "\n\n\n" ; make target=${target} make_ssl 
-	@echo "\n\n\n" ; make target=${target} configure_ff_snark 
-	@echo "\n\n\n" ; make target=${target} make_ff_snark 
+	@echo "\n\n\n" ; make target=${target} scheme=release configure_ff_snark 
+	@echo "\n\n\n" ; make target=${target} scheme=release make_ff_snark 
+	@echo "\n\n\n" ; make target=${target} scheme=debug   configure_ff_snark 
+	@echo "\n\n\n" ; make target=${target} scheme=debug   make_ff_snark 
 
 batch_build_all :
 	@echo "\n\n\n" ; make download_gmp
@@ -233,13 +249,7 @@ batch_build_all :
 	@make install_snark_link_libs 
 
 
-clean_build_dir :
-	rm -rf build_env/ios 
-	rm -rf build_env/ios_sim 
 
-clean_lib_dir :
-	rm -rf lib/ios 
-	rm -rf lib/ios_sim 
 
 
 

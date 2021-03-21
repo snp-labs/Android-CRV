@@ -336,6 +336,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/iOS-CRV",
 				);
+				"LIBRARY_SEARCH_PATHS[sdk=*]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/iOS-CRV",
+					"$(PROJECT_DIR)/../library--zkSnark/archive-debug",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.zcrypto.app--iOS-CRV";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
@@ -358,6 +363,11 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/iOS-CRV",
+				);
+				"LIBRARY_SEARCH_PATHS[sdk=*]" = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/iOS-CRV",
+					"$(PROJECT_DIR)/../library--zkSnark/archive-release",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.zcrypto.app--iOS-CRV";
 				PRODUCT_NAME = "$(TARGET_NAME)";

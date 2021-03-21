@@ -11,6 +11,7 @@ import zkSnark
 class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
 
     @IBOutlet weak var picker: UIPickerView!
+    @IBOutlet weak var runButton: UIButton!
     
     var pickerData : [[String]] = [[String]]()
         
@@ -48,8 +49,12 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
 
     @IBAction func OnClick(_ sender: UIButton) {
         
+        runButton.isEnabled = false
+
         testSnark(test_task: picker.selectedRow(inComponent: 0 ),
                   test_mode : picker.selectedRow(inComponent: 1 ) )
+        
+        runButton.isEnabled = true
     
     }
     

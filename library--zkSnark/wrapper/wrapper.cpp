@@ -8,15 +8,11 @@
 
 
 #if SYSTEM_NAME == iOS
-    
     #include <logging.hpp>
-
 #elif SYSTEM_NAME == ANDRIOD
-
     #include <android/log.h>
     #define  LOG_TAG    "NDK_TEST"
     #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-
 #endif
 
 

@@ -39,9 +39,6 @@ set( CMAKE_SYSROOT              ${SYSROOT} )
 set( CMAKE_C_FLAGS              "${C_FLAGS}" )
 set( CMAKE_CXX_FLAGS            "${CXX_FLAGS}" )
 
-
-add_definitions( -DSYSTEM_NAME=${SYSTEM_NAME} )
-
 foreach(include_dir ${include_dir_list})
   include_directories("${include_dir}")
 endforeach()

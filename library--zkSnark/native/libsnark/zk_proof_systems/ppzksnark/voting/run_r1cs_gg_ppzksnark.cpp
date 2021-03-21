@@ -16,10 +16,9 @@
 #define RUN_R1CS_GG_PPZKSNARK_TCC_
  
 
-
-#if SYSTEM_NAME == iOS
+#if defined(SYSTEM_NAME_iOS)
     #include <logging.hpp>
-#elif SYSTEM_NAME == ANDRIOD
+#elif defined(SYSTEM_NAME_ANDROID)
     #include <android/log.h>
     #define  LOG_TAG    "NDK_TEST"
     #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
