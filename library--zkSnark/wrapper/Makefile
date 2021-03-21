@@ -7,7 +7,7 @@ include ../native/Makefile
 # 	ReBuild Wrapper
 #
 WRAPPER_OBJS    =  build_env/${target}/${scheme}/wrapper.cpp.o  
-WRAPPER_AR 	    := build_env/${target}/${scheme}/libsnark-wrapper.a 
+WRAPPER_AR      := build_env/${target}/${scheme}/libsnark-wrapper.a 
 
 make_wrapper_obj : check_target_arg  ;
 	clang++ -c  \
