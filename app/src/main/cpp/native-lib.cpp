@@ -57,7 +57,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     const char *mode_ = (env)->GetStringUTFChars(mode, NULL);
     const char *loc_ = (env)->GetStringUTFChars(location, NULL);
 
-    char *path1, *path2;
+    std::string path1, path2;
     LOGD("task : %s", task_);
     if(strcmp("register", task_) == 0) {
         path1 = "/data/data/com.example.snarkportingtest/files/registerarith.dat";
@@ -72,16 +72,21 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
         path2 = "/data/data/com.example.snarkportingtest/files/tallyin.dat";
     }
     // Read the circuit, evaluate, and translate constraints
-    LOGD("path : %s, %s", path1, path2);
-    CircuitReader reader(path1, path2, pb);
+    LOGD("path : %s, %s", path1.c_str(), path2.c_str());
+    libff::enter_block("Call to CircuitReader");
+    CircuitReader reader(path1.c_str(), path2.c_str(), pb);
+    libff::leave_block("Call to CircuitReader");
     LOGD("circuit read done");
-    r1cs_constraint_system<FieldT> cs = get_constraint_system_from_gadgetlib2(
-            *pb);
+
+    libff::enter_block("Get Constraint System");
+    r1cs_constraint_system<FieldT> cs = get_constraint_system_from_gadgetlib2(*pb);
+    libff::leave_block("Get Constraint System");
+
     const r1cs_variable_assignment<FieldT> full_assignment =
             get_variable_assignment_from_gadgetlib2(*pb);
     cs.primary_input_size = reader.getNumInputs() + reader.getNumOutputs();
     cs.auxiliary_input_size = full_assignment.size() - cs.num_inputs();
-    LOGD("%d %d\n", cs.primary_input_size, cs.auxiliary_input_size);
+    LOGD("%zu %zu\n", cs.primary_input_size, cs.auxiliary_input_size);
     // extract primary and auxiliary input
     const r1cs_primary_input<FieldT> primary_input(full_assignment.begin(),
                                                    full_assignment.begin() + cs.num_inputs());
@@ -102,6 +107,9 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     LOGD("mode : %s\n", mode_);
 
     string name = task_;
+
+    std::string profile_msg = "Run Mode " + std::string (mode_) ;
+    libff::enter_block(profile_msg );
 
     if(strcmp(mode_, "setup") == 0)
     {
@@ -148,6 +156,15 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
 
         }
 
+    }
+
+    libff::leave_block( profile_msg  );
+
+    LOGD("Profiling Log Text \n\n");
+    istringstream Isstr (libff::profiling_log_text.c_str()) ; 
+    std::string line ;
+    while(getline(Isstr,line)){
+        LOGD("%s" , line.c_str() );
     }
 
     return env->NewStringUTF("1");

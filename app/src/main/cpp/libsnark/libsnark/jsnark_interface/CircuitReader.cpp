@@ -9,7 +9,7 @@
 #define  LOG_TAG    "NDK_TEST"
 #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
 
-CircuitReader::CircuitReader(char* arithFilepath, char* inputsFilepath,
+CircuitReader::CircuitReader(const char* arithFilepath,const  char* inputsFilepath,
 		ProtoboardPtr pb) {
 
 	this->pb = pb;
@@ -28,7 +28,7 @@ CircuitReader::CircuitReader(char* arithFilepath, char* inputsFilepath,
 	zeroPwires.clear();
 }
 
-void CircuitReader::parseAndEval(char* arithFilepath, char* inputsFilepath) {
+void CircuitReader::parseAndEval(const char* arithFilepath, const char* inputsFilepath) {
 
 	LOGD("Parsing and Evaluating the circuit");
 
@@ -224,7 +224,7 @@ void CircuitReader::parseAndEval(char* arithFilepath, char* inputsFilepath) {
  	LOGD("Parsing and Evaluating the circuit done");
 }
 
-void CircuitReader::constructCircuit(char* arithFilepath) {
+void CircuitReader::constructCircuit(const char* arithFilepath) {
 
 
 
@@ -279,7 +279,7 @@ void CircuitReader::constructCircuit(char* arithFilepath) {
 	int lineCount = 0;
 	while (getline(ifs2, line)) {
 		lineCount++;
-		LOGD("%d : %s", lineCount, line.c_str());
+		//LOGD("%d : %s", lineCount, line.c_str());
 //		if (lineCount % 100000 == 0) {
 //			LOGD("At Line:: %d\n", lineCount);
 //		}

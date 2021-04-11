@@ -27,7 +27,19 @@
 #include <proc/readproc.h>
 #endif
 
+
+#define snprintf_buffer_size 4096
+#undef  printf 
+#define printf(...) snprintf(snprintf_buffer, snprintf_buffer_size,__VA_ARGS__); \
+                    profiling_log_text.append(snprintf_buffer);
+
+
 namespace libff {
+
+
+std::string profiling_log_text ;
+char snprintf_buffer[snprintf_buffer_size] ;
+
 
 long long get_nsec_time()
 {
