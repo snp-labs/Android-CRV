@@ -79,7 +79,9 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     LOGD("circuit read done");
 
     libff::enter_block("Get Constraint System");
-    r1cs_constraint_system<FieldT> cs = get_constraint_system_from_gadgetlib2(*pb);
+    r1cs_constraint_system<FieldT> 
+        //cs = get_constraint_system_from_gadgetlib2(*pb);
+        cs = get_constraint_system_from_gadgetlib2_multi_threaded(*pb) ;
     libff::leave_block("Get Constraint System");
 
     const r1cs_variable_assignment<FieldT> full_assignment =
