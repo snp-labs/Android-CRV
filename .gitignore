@@ -115,7 +115,7 @@ lint/tmp/
 *.pch
 
 # Compiled Dynamic libraries
-*.so
+
 *.dylib
 *.dll
 
