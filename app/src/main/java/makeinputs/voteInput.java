@@ -1,20 +1,27 @@
 package makeinputs;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.util.Scanner;
+
+import android.util.Log;
 
 public class voteInput{
     public voteInput(int msgSize){
         try{
-            String inFilePath = new String("./vote.in");
-            Scanner scanner = new Scanner(new File("./votePP.in"));
-            File filetmp = new File("./vote_tmp.in");
+            String inFilePath = new String("/data/data/com.example.snarkportingtest/files/votein");
+            Scanner scanner = new Scanner(new File(inFilePath+".txt"));
+            File filetmp = new File(inFilePath+".tmp");
 			File filePublic = new File("./votePP.in");
             File filePrivate = new File("./vote.in");
             
@@ -82,7 +89,51 @@ public class voteInput{
 		}
 		return chunks;
 	}
-	
+
+	public voteInput(String param, int position){
+        // 원본파일경로
+        String fileName = "/data/data/com.example.snarkportingtest/files/votein";
+
+        File file = new File(fileName+".txt");
+
+        String dummy = "";
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
+            //BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+
+            //1. 삭제하고자 하는 position 이전까지는 이동하며 dummy에 저장
+
+            String line;
+
+            for(int i=0; i<position; i++) {
+
+                line = br.readLine(); //읽으며 이동
+
+                dummy += (line + "\r\n" );
+
+            }
+            //2. 삭제하고자 하는 데이터는 건너뛰기
+
+            String delData = br.readLine();
+            Log.d("mstag","삭제되는 데이터 = "+delData);
+
+            //3. 삭제하고자 하는 position 이후부터 dummy에 저장
+            while((line = br.readLine())!=null) {
+                dummy += (line + "\r\n" );
+            }
+
+            //4. FileWriter를 이용해서 덮어쓰기
+            FileWriter fw = new FileWriter(fileName+".txt");
+            fw.write(dummy);
+            //bw.close();
+            fw.close();
+            br.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
 
     public static void main(String[] args) {
         System.out.println(args.length);
