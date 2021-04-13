@@ -3,6 +3,7 @@ package com.example.snarkportingtest;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
@@ -24,20 +25,22 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import static com.example.snarkportingtest.MainActivity.ip;
 import static com.example.snarkportingtest.MainActivity.port;
 
-// firebase 아이디 중복 확인 추가 필요
+// 아이디 중복 확인 추가 필요
 public class UsersignupActivity extends AppCompatActivity {
 
     EditText et_signupid;
@@ -71,12 +74,9 @@ public class UsersignupActivity extends AppCompatActivity {
     private String userid;
     private String userpwd;
 
-    private FirebaseAuth mAuth;
-
 
     private Handler mHandler;
 
-    private Socket socket;
 
     private DataOutputStream dos;
     private DataInputStream dis;
@@ -87,9 +87,6 @@ public class UsersignupActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_usersignup);
-
-        // Initialize Firebase Auth
-        mAuth = FirebaseAuth.getInstance();
 
         FindViewID();   // layout view 아이디 연결
         TextSizeSet();  // text size 자동조절
@@ -111,10 +108,11 @@ public class UsersignupActivity extends AppCompatActivity {
                 AlertDialog.Builder builder = new AlertDialog.Builder(UsersignupActivity.this);
                 userid = et_signupid.getText().toString().toLowerCase();
                 // 수정필요(아이디 영어 + 숫자 확인)
+                connect();
+
                 if (Pattern.matches("^[0-9a-zA-Z]*$", userid)) {
                     if (!userid.equals(null)) {
                         // DB 아이디와 중복체크 필요, racecondition 체크 (TAG_ADMIN_SDK)
-                        connect();
                         Log.d("id_check_status___", String.valueOf(id_check_status.equals("fail")));
                         if(id_check_status.equals("fail")) {
                             builder.setTitle("중복확인").setMessage("사용가능한 아이디입니다.").setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -180,7 +178,7 @@ public class UsersignupActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "본인인증이 필요합니다", Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    SignUp(); // firebase 연동 회원가입 함수
+                    SignUp("signup"); // 연동 회원가입 함수
                 }
             }
         });
@@ -304,75 +302,51 @@ public class UsersignupActivity extends AppCompatActivity {
         });
     }
 
-    // 로그인 정보 db에 넣어주고 연결시켜야 함.
     private void connect(){
         mHandler = new Handler();
-        Thread checkUpdate = new Thread() {
-            public void run() {
+        Thread checkUpdate = new Thread(){
+            public void run(){
                 try {
-                    socket = new Socket(ip, port);
-                    Log.d("서버 접속됨", "서버 접속됨");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    dos = new DataOutputStream(socket.getOutputStream());   // output에 보낼꺼 넣음
-                    dis = new DataInputStream(socket.getInputStream());     // input에 받을꺼 넣어짐
+                    String result = new join().execute(userid, "", "check").get();
 
-                    dos.writeUTF("id_check");
-                    dos.writeUTF(et_signupid.getText().toString()+"@vote.com");
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    byte[] read_data = new byte[4];
-                    dis.read(read_data);
-                    id_check_status = new String(read_data);
-                    Log.d("id_check_status", String.valueOf(id_check_status.equals("fail")));
-                }catch (Exception e){
-                }
+//                    if(result.equals("success")){
+                    id_check_status = result;
+                }catch (Exception e) {}
             }
         };
         checkUpdate.start();
-
-        try {
+        try{
             checkUpdate.join();
-        } catch (InterruptedException e) {
+        }catch (InterruptedException e){
             e.printStackTrace();
         }
     }
 
-    // firebase 연동 회원가입
-    private void SignUp() {
-        String email = ((EditText)findViewById(R.id.et_signupid)).getText().toString().toLowerCase() + "@vote.com";
-        String password = ((EditText)findViewById(R.id.et_signuppwd)).getText().toString();
-        String passwordcheck = ((EditText)findViewById(R.id.et_signuppwdcheck)).getText().toString();
+    // 연동 회원가입
+    private void SignUp(String mode) {
+        String email = ((EditText) findViewById(R.id.et_signupid)).getText().toString().toLowerCase();
+        String password = ((EditText) findViewById(R.id.et_signuppwd)).getText().toString();
+        String passwordcheck = ((EditText) findViewById(R.id.et_signuppwdcheck)).getText().toString();
 
         if (password.equals(passwordcheck)) {
-            mAuth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                        @Override
-                        public void onComplete(@NonNull Task<AuthResult> task) {
+            try {
+                String result = new join().execute(email, password, mode).get();
+                Intent intent = new Intent();
+                if (result.equals("success")) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d("SignUp", "createUserWithEmail:success");
 
-                            Intent intent = new Intent();
-                            if (task.isSuccessful()) {
-                                // Sign in success, update UI with the signed-in user's information
-                                Log.d("SignUp", "createUserWithEmail:success");
-                                FirebaseUser user = mAuth.getCurrentUser();
-                                intent.putExtra("ID", et_signupid.getText().toString()+"@vote.com");
-                                setResult(RESULT_OK, intent);
-                                finish();
-                            } else {
-                                // If sign in fails, display a message to the user.
-                                Log.w("SignUp", "createUserWithEmail:failure", task.getException());
-                                setResult(RESULT_CANCELED, intent);
-                                finish();
-                            }
-                        }
-                    });
-        }else {
-            Toast.makeText(this, "비밀번호가 일치하지 않습니다", Toast.LENGTH_SHORT).show(); // 이 토스트 박스가 나오면 이상한것!!(절대 안나오는게 정상)
+                    intent.putExtra("ID", et_signupid.getText().toString());
+                    setResult(RESULT_OK, intent);
+                    finish();
+                } else {
+                    // If sign in fails, display a message to the user.
+                    Log.w("SignUp", "createUserWithEmail:failure");
+                    setResult(RESULT_CANCELED, intent);
+                    Log.d("signup result", "fail");
+                    finish();
+                }
+            }catch (Exception e) {}
         }
     }
 
@@ -419,5 +393,45 @@ public class UsersignupActivity extends AppCompatActivity {
         btn_signupfinish.setTextSize((float) (((MainActivity)MainActivity.context_main).standardSize_X/20));
 
         sw_signupuseragreement.setTextSize((float) (((MainActivity)MainActivity.context_main).standardSize_X/20));
+    }
+    class join extends AsyncTask<String, String, String> {
+        String sendMsg, receiveMsg;
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                String str;
+                URL url = new URL("http://222.111.165.26:8080/login.php");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.connect();
+
+                sendMsg = "mode="+strings[2]+"&user_id="+strings[0]+"&user_pw="+strings[1];
+                OutputStream outs = conn.getOutputStream();
+                outs.write(sendMsg.getBytes("UTF-8"));
+                outs.flush();
+                outs.close();
+
+                if(conn.getResponseCode() == conn.HTTP_OK) {
+                    InputStreamReader tmp = new InputStreamReader(conn.getInputStream(), "UTF-8");
+                    BufferedReader reader = new BufferedReader(tmp);
+                    StringBuffer buffer = new StringBuffer();
+                    while ((str = reader.readLine()) != null) {
+                        buffer.append(str);
+                    }
+                    receiveMsg = buffer.toString();
+                    Log.d("received msg", receiveMsg);
+                } else {
+                    Log.i("통신 결과", conn.getResponseCode()+"에러");
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return receiveMsg;
+        }
     }
 }

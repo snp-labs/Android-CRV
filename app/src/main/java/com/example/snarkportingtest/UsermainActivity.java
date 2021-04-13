@@ -22,13 +22,6 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -52,8 +45,6 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
     private RecyclerView.Adapter adapter;
     private RecyclerView.LayoutManager layoutManager;
     private ArrayList<Votedetail> votelist;
-    private FirebaseDatabase database;
-    private DatabaseReference databaseReference;
 
     Toolbar toolbar;
 
@@ -93,15 +84,15 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
         adapter = new VotelistAdapter(votelist, this, this);
         recyclerView.setAdapter(adapter); // 리사이클러뷰에 어댑터 연결
         recyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));  // 투표목록 구분선
+        votelist.clear();
 
-        database = FirebaseDatabase.getInstance(); // 파이어베이스 데이터베이스 연동
+        Intent getintent = getIntent();
+        user_id = (String) getintent.getExtras().get("user_id");
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();        // user id 확인 및 설정
-        if(user != null) {
-            user_id = user.getEmail().split("@")[0];
-            Log.d("user_id", user_id);
-        }
-
+        Intent makeinput = new Intent(UsermainActivity.this, makevoteinput.class);
+        makeinput.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        makeinput.putExtra("param", "PP");
+        startActivity(makeinput);
 
     }
 
@@ -134,41 +125,41 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
         votelist.clear();
         vote_id_list.clear();
 
-        Cursor c = db.rawQuery("select * from votelist;", null);
-        if(c.moveToFirst()) {
-            while(!c.isAfterLast()){
-                Log.d("TAG_READ_votelist", "" + c.getInt(c.getColumnIndex("vote_id")));
-                vote_id_list.add(c.getInt(c.getColumnIndex("vote_id")));        // server DB와 비교하기 위함
-
-                Votedetail votedetail = new Votedetail();
-                votedetail.setVote_id(c.getInt(c.getColumnIndex("vote_id")));
-                votedetail.setTitle(c.getString(c.getColumnIndex("title")));
-                votedetail.setCreated(c.getString(c.getColumnIndex("admin")));
-                votedetail.setStart(c.getString(c.getColumnIndex("start_date")));
-                votedetail.setEnd(c.getString(c.getColumnIndex("end_date")));
-                votedetail.setType(c.getString(c.getColumnIndex("type")));
-                votedetail.setNote(c.getString(c.getColumnIndex("note")));
-
-                votelist.add(votedetail);       // 현재 폰 DB에 있는 투표정보
-                adapter.notifyDataSetChanged(); // 리스트 저장 및 새로고침
-                c.moveToNext();
-            }
-//                    Log.d("Tag_sql", "제발"+vote_id_list.toString());
-        }
-        Log.d("TAG_SQLITE", "suc");
+//        Cursor c = db.rawQuery("select * from votelist;", null);
+//        if(c.moveToFirst()) {
+//            while(!c.isAfterLast()){
+//                Log.d("TAG_READ_votelist", "" + c.getInt(c.getColumnIndex("vote_id")));
+//                vote_id_list.add(c.getInt(c.getColumnIndex("vote_id")));        // server DB와 비교하기 위함
+//
+//                Votedetail votedetail = new Votedetail();
+//                votedetail.setVote_id(c.getInt(c.getColumnIndex("vote_id")));
+//                votedetail.setTitle(c.getString(c.getColumnIndex("title")));
+//                votedetail.setCreated(c.getString(c.getColumnIndex("admin")));
+//                votedetail.setStart(c.getString(c.getColumnIndex("start_date")));
+//                votedetail.setEnd(c.getString(c.getColumnIndex("end_date")));
+//                votedetail.setType(c.getString(c.getColumnIndex("type")));
+//                votedetail.setNote(c.getString(c.getColumnIndex("note")));
+//
+//                votelist.add(votedetail);       // 현재 폰 DB에 있는 투표정보
+//                adapter.notifyDataSetChanged(); // 리스트 저장 및 새로고침
+//                c.moveToNext();
+//            }
+////                    Log.d("Tag_sql", "제발"+vote_id_list.toString());
+//        }
+//        Log.d("TAG_SQLITE", "suc");
 
         // Mysql DB connect - Read votelist
         DB_check task = new DB_check();
-        task.execute("http://"+ip+":80/project/votervotelist_read.php");   // 집 ip
+//        task.execute("http://"+ip+":80/project/votervotelist_read.php");   // 집 ip
 //        task.execute("http://192.168.0.168:80/project/votervotelist_read.php");     // 한양대 ip
-
+        task.execute("http://"+ip+":8080/votelist_read.php");   // 국민대 ip
     }
 
     // 뒤로가기 하단 버튼 클릭시 로그아웃
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        FirebaseAuth.getInstance().signOut(); // 로그아웃(firebase 로그인 연동)
+
     }
 
     // recyclerview 투표 선택시 투표 화면 이동
@@ -179,6 +170,8 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
         intent.putExtra("user_id", user_id);
         intent.putExtra("vote", votedetail);
         startActivityForResult(intent, REQUEST_CODE);
+
+
     }
 
     // 투표 화면에서 돌아올 때(toastbox)
@@ -222,52 +215,7 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
         }
         return true;
     }
-    // firebase DB
-//    private void ReadDB(String DB_path){
-//        if (DB_path == "User") {
-//            databaseReference = database.getReference(DB_path); // DB 테이블 연결 - user data 확인(votelist)
-//            databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                    User user = dataSnapshot.child(user_id).getValue(User.class);
-//                    votelist = user.getVotelist().split(",");
-//                    Log.d("votelist", votelist[0] + votelist[1]);
-//                }
-//
-//                @Override
-//                public void onCancelled(@NonNull DatabaseError databaseError) {
-//                    // DB를 가져오던 중 에러 발생시
-//                    Log.e("UsermainActivity", String.valueOf(databaseError.toException()));
-//                }
-//            });
-//        } else if(DB_path == "Votelist") {
-//            arrayList.clear(); // 기존 배열 초기화
-//            for(String title : votelist) {
-//                Log.d("title", title);
-//                databaseReference = database.getReference(DB_path+"/"+title); // DB 테이블 연결 - user data 확인(votelist)
-//                databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-//                    @Override
-//                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                        // 파이어베이스 데이터베이스의 데이터를 받아오는 함수
-//                        Votedetail votedetail = dataSnapshot.getValue(Votedetail.class);
-//                        Log.d("votedetail", votedetail.getTitle());
-//                        arrayList.add(votedetail);
-//
-//                        adapter.notifyDataSetChanged(); // 리스트 저장 및 새로고침
-//                    }
-//
-//                    @Override
-//                    public void onCancelled(@NonNull DatabaseError databaseError) {
-//                        // DB를 가져오던 중 에러 발생시
-//                        Log.e("VoterActivity", String.valueOf(databaseError.toException()));
-//                    }
-//                });
-//            }
-//
-//            adapter = new VotelistAdapter(arrayList, this, this);
-//            recyclerView.setAdapter(adapter); // 리사이클러뷰에 어댑터 연결
-//        }
-//    }
+
 
     // Mysql DB
     private class DB_check extends AsyncTask<String, Void, String> {
@@ -293,6 +241,9 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
 
                 httpURLConnection.setReadTimeout(5000);
                 httpURLConnection.setConnectTimeout(5000);
+                httpURLConnection.setRequestProperty("content-type", "application/x-www-form-urlencoded");
+                httpURLConnection.setDoInput(true);                         // 서버에서 읽기 모드 지정
+                httpURLConnection.setDoOutput(true);                       // 서버로 쓰기 모드 지정
                 httpURLConnection.setRequestMethod("POST");
                 httpURLConnection.connect();
 
@@ -325,7 +276,7 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
 
                 bufferedReader.close();
 
-
+                Log.d("INCOMING MSG : ", sb.toString());
                 return sb.toString();
 
             } catch (Exception e) {
@@ -385,7 +336,7 @@ public class UsermainActivity extends AppCompatActivity implements VotelistAdapt
                 if(c.moveToFirst()) {
                     while(!c.isAfterLast()){
                         int vote_id;
-                        Log.d("TAG_READ_usermain", "" + c.getInt(c.getColumnIndex("vote_id")) + c.getString(c.getColumnIndex("title")));
+//                        Log.d("TAG_READ_usermain", "" + c.getInt(c.getColumnIndex("vote_id")) + c.getString(c.getColumnIndex("title")));
                         c.moveToNext();
                     }
                 }
