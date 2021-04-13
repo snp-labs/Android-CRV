@@ -79,7 +79,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     LOGD("circuit read done");
 
     libff::enter_block("Get Constraint System");
-    r1cs_constraint_system<FieldT> 
+    r1cs_constraint_system<FieldT>
         //cs = get_constraint_system_from_gadgetlib2(*pb);
         cs = get_constraint_system_from_gadgetlib2_multi_threaded(*pb) ;
     libff::leave_block("Get Constraint System");
@@ -99,7 +99,6 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     // A follow-up will be added.
     if(!cs.is_satisfied(primary_input, auxiliary_input)){
         LOGD("The constraint system is  not satisifed by the value assignment - Terminating.");
-        LOGD("1194");
     }
 
     r1cs_example<FieldT> example(cs, primary_input, auxiliary_input);
@@ -131,7 +130,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
 
         if(!successBit){
             LOGD("Problem occurred while running the ppzksnark algorithms .. ");
-
+            return env->NewStringUTF("0");
         }
 
     }
@@ -146,6 +145,14 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
                     example, test_serialization, name);
 
     }
+    else if(strcmp(mode_, "setuprun") == 0)
+    {
+        LOGD("setuprun");
+
+        libsnark::run_r1cs_gg_ppzksnark_setup<libsnark::default_r1cs_gg_ppzksnark_pp>(example, test_serialization, name);
+        libsnark::run_r1cs_gg_ppzksnark<libsnark::default_r1cs_gg_ppzksnark_pp>(example, test_serialization, name);
+
+    }
     else if(strcmp(mode_, "all") == 0) {
         LOGD("all");
 
@@ -155,7 +162,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
 
         if (!successBit) {
             LOGD("Problem occurred while running the ppzksnark algorithms .. " );
-
+            return env->NewStringUTF("0");
         }
 
     }
@@ -163,7 +170,7 @@ Java_com_example_snarkportingtest_SubActivity_stringFromJNI(
     libff::leave_block( profile_msg  );
 
     LOGD("Profiling Log Text \n\n");
-    istringstream Isstr (libff::profiling_log_text.c_str()) ; 
+    istringstream Isstr (libff::profiling_log_text.c_str()) ;
     std::string line ;
     while(getline(Isstr,line)){
         LOGD("%s" , line.c_str() );
