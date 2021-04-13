@@ -21,12 +21,13 @@
             android:layout_height="wrap_content"
             android:textSize="30sp"
             android:text="투표목록"/>
+
         <TextView
             android:id="@+id/tv_votetest"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:text="test"/>
+            android:text="test"
+            android:textSize="20sp" />
 
     </LinearLayout>
     <LinearLayout
