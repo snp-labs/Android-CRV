@@ -14,6 +14,10 @@
 #ifndef SERIALIZATION_TCC_
 #define SERIALIZATION_TCC_
 
+#ifdef ANDROID
+#define BINARY_OUTPUT
+#endif
+
 #include <cassert>
 #include <sstream>
 

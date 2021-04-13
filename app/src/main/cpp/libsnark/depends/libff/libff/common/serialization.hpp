@@ -18,6 +18,10 @@
 #include <set>
 #include <vector>
 
+#ifdef ANDROID
+#define BINARY_OUTPUT
+#endif
+
 namespace libff {
 
 /*
