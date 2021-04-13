@@ -135,7 +135,7 @@ public class AdminActivity extends AppCompatActivity implements AdminVotelistAda
         String start_date = votedetail.getStart();
         String end_date = votedetail.getEnd();
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date today = null;
         Date s_date = null;
         Date e_date = null;
