@@ -15,16 +15,7 @@
 #ifndef RUN_R1CS_GG_PPZKSNARK_TCC_
 #define RUN_R1CS_GG_PPZKSNARK_TCC_
  
-
-#if defined(SYSTEM_NAME_iOS)
-    #include <logging.hpp>
-#elif defined(SYSTEM_NAME_ANDROID)
-    #include <android/log.h>
-    #define  LOG_TAG    "NDK_TEST"
-    #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-#endif
-
-
+#include <logging.hpp>
 
 #include <libff/common/profiling.hpp>
 #include <libsnark/zk_proof_systems/ppzksnark/voting/r1cs_gg_ppzksnark.hpp>

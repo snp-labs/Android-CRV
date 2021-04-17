@@ -24,9 +24,9 @@ extern "C" {
     int CsubActivity_FromApp(
         enum sub_activity_task task, 
         enum sub_activity_mode mode,
-        char* arith_text_content ,
-        char* inputs_text_content ,
-        char* DocumentFolder 
+        const char* arith_text_content ,
+        const char* inputs_text_content ,
+        const char* DocumentFolder 
     ) ;
 
     const char* CgetBuildVersion();

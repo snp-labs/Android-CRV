@@ -6,8 +6,8 @@ COMPILERS           :=CC=${C_COMPILER} CXX=${CXX_COMPILER}
 MAKE_JOBS           := -j 4
 
 BUILD_WORKSPACE     :=build_env/
-BUILD_DIR           :=${BUILD_WORKSPACE}${target}/
-INSTALL_DIR         :=${PWD}/lib/${target}/
+BUILD_DIR           :=${BUILD_WORKSPACE}${scheme}_${target}/
+INSTALL_DIR 		:=${PWD}/lib/${scheme}_${target}/
 LIBCXX_DIR          :=$(shell xcrun --show-sdk-platform-path)/../../Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1
 
 
@@ -32,12 +32,20 @@ endif
 
 
 C_ARGUMENTS         = -target ${TRIPLE} -DSYSTEM_NAME_${SYSTEM_NAME} -DSCHEME_${scheme} 
-C_ARGUMENTS         += -Wall -Wextra -Wfatal-errors -ggdb3 -O2
+C_ARGUMENTS         += -Wall -Wextra -Wfatal-errors
+
+ifeq ($(strip $(scheme)),release)
+C_ARGUMENTS         += -Ofast
+else ifeq ($(strip $(scheme)),debug)
+C_ARGUMENTS         += -ggdb3 -O2
+endif
+
 CXX_ARGUMENTS       := ${C_ARGUMENTS} -stdlib=libc++ -std=c++11 
 SYSROOT_OPT         := -isystem=${SDK_DIR} -isysroot ${SDK_DIR} -I${LIBCXX_DIR} 
 
 MAKE_CFLAGS         = ${C_ARGUMENTS} ${SYSROOT_OPT} 
 MAKE_CXXFLAGS       = ${CXX_ARGUMENTS} ${SYSROOT_OPT} 
+
 
 
 
@@ -66,11 +74,13 @@ FF_SNARK_CXXFLAGS   := ${CXX_ARGUMENTS} -I${LIBCXX_DIR}
  
 endif
 
+ 
 
-
-
-${BUILD_DIR} : ${BUILD_WORKSPACE} ;
+${BUILD_DIR} :   ;
 	mkdir -p ${BUILD_DIR}	
+
+${INSTALL_DIR} :
+	mkdir -p ${INSTALL_DIR} 
 
 check_target_arg : ;
 	@if [ "${target}" = "" ] ; then \
@@ -96,7 +106,7 @@ download_gmp :
 
 configure_gmp : check_target_arg  ${BUILD_DIR}
 	@echo "\n\n--> Clean build folder "
-	rm -fr ${GMP_BUILD_DIR} ; mkdir ${GMP_BUILD_DIR}
+	rm -fr ${GMP_BUILD_DIR} ; mkdir -p ${GMP_BUILD_DIR}
 	@echo "\n\n--> Run Configure \n"
 	cd ${GMP_BUILD_DIR} ; \
 		${GMP_SRC_DIR}/configure \
@@ -109,7 +119,7 @@ configure_gmp : check_target_arg  ${BUILD_DIR}
 	rpl --  'CXXFLAGS = ' 'CXXFLAGS = ${MAKE_CXXFLAGS} ' ${GMP_BUILD_DIR}/*/Makefile
 	rpl --  'CXXFLAGS = ' 'CXXFLAGS = ${MAKE_CXXFLAGS} ' ${GMP_BUILD_DIR}/Makefile
 
-make_gmp : check_target_arg ; 
+make_gmp : check_target_arg ${INSTALL_DIR} ; 
 	cd ${GMP_BUILD_DIR} ; make ${MAKE_JOBS}
 	cd ${GMP_BUILD_DIR} ; make install 
 	
@@ -132,7 +142,7 @@ download_ssl :
 
 configure_ssl : check_target_arg ${BUILD_DIR} ;
 	@echo "\n\n--> Clean build folder "
-	rm -fr ${SSL_BUILD_DIR} ; mkdir ${SSL_BUILD_DIR}
+	rm -fr ${SSL_BUILD_DIR} ; mkdir -p ${SSL_BUILD_DIR}
 	@echo "\n\n--> Run Configure \n"
 	cd ${SSL_BUILD_DIR} ; \
 		${SSL_SRC_DIR}/Configure \
@@ -145,9 +155,9 @@ configure_ssl : check_target_arg ${BUILD_DIR} ;
 	echo "CFLAGS += ${MAKE_CFLAGS} "  		>> ${SSL_BUILD_DIR}/Makefile 
 	echo "CFLAGS += ${SSL_EXTRA_MAKE_OPT} " >> ${SSL_BUILD_DIR}/Makefile 
 
-make_ssl : check_target_arg ; 
+make_ssl : check_target_arg ${INSTALL_DIR} ; 
 	cd ${SSL_BUILD_DIR} ; make ${MAKE_JOBS}
-	cd ${SSL_BUILD_DIR} ; make install 
+	cd ${SSL_BUILD_DIR} ; make install_sw 
 	
 
 
@@ -155,7 +165,7 @@ make_ssl : check_target_arg ;
 #
 # 	Rebuild libff and libsnark
 #
-FF_SNARK_BUILD_DIR      :=${BUILD_DIR}${scheme}_ff_snark
+FF_SNARK_BUILD_DIR      :=${BUILD_DIR}ff_snark
 FF_SNARK_INCLUDE_DIR    = ${PWD} ${PWD}/depends ${INSTALL_DIR}include
 FF_SNARK_INCLUDE_DIR    += ${PWD}/../wrapper ${LIBCXX_DIR}  
 
@@ -164,7 +174,7 @@ I_DIR_LIST  :=$(shell echo "${I_DIR}" | sed -e 's/ /;/g')
 
 configure_ff_snark : check_target_arg ${BUILD_DIR} ;
 	@echo "\n\n--> Clean build folder "
-	rm -fr ${FF_SNARK_BUILD_DIR} ; mkdir ${FF_SNARK_BUILD_DIR}
+	rm -fr ${FF_SNARK_BUILD_DIR} ; mkdir -p ${FF_SNARK_BUILD_DIR}
 	cmake  \
 	-D C_COMPILER="${C_COMPILER}" \
 	-D CXX_COMPILER="${CXX_COMPILER}" \
@@ -176,12 +186,12 @@ configure_ff_snark : check_target_arg ${BUILD_DIR} ;
 	-D SYSROOT="${SDK_DIR}" \
 	-D C_FLAGS="${FF_SNARK_CFLAGS}" \
 	-D CXX_FLAGS="${FF_SNARK_CXXFLAGS}" \
-	-D INSTALL_DIR="${PWD}/lib/${target}_${scheme}" \
+	-D INSTALL_DIR="${INSTALL_DIR}lib/" \
 	-D I_DIR_LIST="${I_DIR_LIST}" \
 	-S . -B ${FF_SNARK_BUILD_DIR} 
 
 
-make_ff_snark : check_target_arg ;
+make_ff_snark : check_target_arg ${INSTALL_DIR} ;
 	@echo "\n\n--> Build libff and libsnark "
 	cmake --build ${FF_SNARK_BUILD_DIR} ${MAKE_JOBS} 
 	cmake --install ${FF_SNARK_BUILD_DIR}
@@ -193,33 +203,23 @@ make_ff_snark : check_target_arg ;
 #
 # 	Create and copy universal static library
 #
-install_snark_link_libs :
+copy_lib :
 	libtool -static \
-		lib/ios_release/libsnark.a \
-		lib/ios_sim_release/libsnark.a \
-		-o ../archive-release/libsnark.a
+		lib/release_ios/lib/${LIB_TO_MOVE} \
+		lib/release_ios_sim/lib/${LIB_TO_MOVE} \
+		-o ../archive-release/${LIB_TO_MOVE}
 	libtool -static \
-		lib/ios_debug/libsnark.a \
-		lib/ios_sim_debug/libsnark.a \
-		-o ../archive-debug/libsnark.a
-	libtool -static \
-		lib/ios_release/libff.a \
-		lib/ios_sim_release/libff.a \
-		-o ../archive-release/libff.a
-	libtool -static \
-		lib/ios_debug/libff.a \
-		lib/ios_sim_debug/libff.a \
-		-o ../archive-debug/libff.a	
-	libtool -static lib/*/lib/libgmp.a    	 -o ../archive-release/libgmp.a
-	libtool -static lib/*/lib/libgmpxx.a     -o ../archive-release/libgmpxx.a
-	libtool -static lib/*/lib/libssl.a       -o ../archive-release/libssl.a
-	libtool -static lib/*/lib/libcrypto.a    -o ../archive-release/libcrypto.a
-	cp ../archive-release/libgmp.a \
-		../archive-release/libgmpxx.a \
-		../archive-release/libssl.a \
-		../archive-release/libcrypto.a \
-		../archive-debug/
+		lib/debug_ios/lib/${LIB_TO_MOVE} \
+		lib/debug_ios_sim/lib/${LIB_TO_MOVE} \
+		-o ../archive-debug/${LIB_TO_MOVE}	
 
+install_snark_link_libs :
+	make copy_lib LIB_TO_MOVE=libgmp.a 
+	make copy_lib LIB_TO_MOVE=libgmpxx.a
+	make copy_lib LIB_TO_MOVE=libssl.a
+	make copy_lib LIB_TO_MOVE=libcrypto.a
+	make copy_lib LIB_TO_MOVE=libff.a
+	make copy_lib LIB_TO_MOVE=libsnark.a
 
 
 #
@@ -231,25 +231,41 @@ clean_all :
 	rm -rf build_env ; mkdir build_env
 	rm -rf lib       ; mkdir lib 
 
-batch_build_target : check_target_arg ;
-	@echo "\n\n\n" ; make target=${target} configure_gmp
-	@echo "\n\n\n" ; make target=${target} make_gmp 
-	@echo "\n\n\n" ; make target=${target} configure_ssl 
-	@echo "\n\n\n" ; make target=${target} make_ssl 
-	@echo "\n\n\n" ; make target=${target} scheme=release configure_ff_snark 
-	@echo "\n\n\n" ; make target=${target} scheme=release make_ff_snark 
-	@echo "\n\n\n" ; make target=${target} scheme=debug   configure_ff_snark 
-	@echo "\n\n\n" ; make target=${target} scheme=debug   make_ff_snark 
+LOG_FILE            :=build_env/logs/${scheme}_${target}_${task}
+
+build_env/logs :
+	@mkdir -p build_env/logs
+
+run_task : build_env/logs ;
+	@echo "\nJob : "
+	@echo "  Task     = ${task}"
+	@echo "  Scheme   = ${scheme} "
+	@echo "  Target   = ${target} "
+	@echo "  Log file = ${LOG_FILE}"
+	@echo "" >${LOG_FILE}
+	@make target=${target} scheme=${scheme} ${task}  >>${LOG_FILE} 2>>${LOG_FILE}
+
+batch_build : check_target_arg ;
+	@make run_task target=${target} scheme=${scheme} task=configure_gmp
+	@make run_task target=${target} scheme=${scheme} task=make_gmp
+	@make run_task target=${target} scheme=${scheme} task=configure_ssl
+	@make run_task target=${target} scheme=${scheme} task=make_ssl
+	@make run_task target=${target} scheme=${scheme} task=configure_ff_snark
+	@make run_task target=${target} scheme=${scheme} task=make_ff_snark
+
+batch_build_targets :  ;
+	@make batch_build target=ios scheme=${scheme}
+	@make batch_build target=ios_sim scheme=${scheme}
+
+batch_build_schemes :
+	@make batch_build_targets scheme=release
+	@make batch_build_targets scheme=debug
 
 batch_build_all :
 	@#echo "\n\n\n" ; make download_gmp
 	@#echo "\n\n\n" ; make download_ssl
-	@make batch_build_target target=ios
-	@make batch_build_target target=ios_sim
+	@make batch_build_schemes
 	@make install_snark_link_libs 
-
-
-
-
+	
 
 

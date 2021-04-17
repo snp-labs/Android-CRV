@@ -1,28 +1,13 @@
 #define NO_PROCPS
 #define CURVE_ALT_BN128
-//#define MIE_ATE_USE_GMP
 #define NDEBUG
-//#define _FILE_OFFSET_BITS 64
-//#define MIE_ZM_VUINT_BIT_LEN (64 * 9)
-//#define NDEBUG 1
 
-
-#if SYSTEM_NAME == iOS
-    #include <logging.hpp>
-#elif SYSTEM_NAME == ANDRIOD
-    #include <android/log.h>
-    #define  LOG_TAG    "NDK_TEST"
-    #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-#endif
-
+#include <logging.hpp>
 
 #include <initializer_list>
-
-//#include <jni.h>
 #include <string>
 #include <iostream>
 #include <gmp.h>
-//#include <gmpxx.h>
 #include <openssl/bn.h>
 #include <cassert>
 #include <cstdio>
@@ -37,7 +22,6 @@
 #include <libsnark/common/default_types/r1cs_gg_ppzksnark_pp.hpp>
 #include <libsnark/relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp>
 #include <libsnark/jsnark_interface/CircuitReader.hpp>
-//#include "CircuitReader.hpp"
 #include <libsnark/gadgetlib2/integration.hpp>
 #include <libsnark/gadgetlib2/adapters.hpp>
 #include <libsnark/zk_proof_systems/ppzksnark/voting/r1cs_gg_ppzksnark.hpp>
@@ -65,9 +49,9 @@ const char* CgetBuildVersion() {
 int CsubActivity_FromApp(
     sub_activity_task task , 
     sub_activity_mode mode ,
-    char* arith_text_content ,
-    char* inputs_text_content,
-    char* DocumentFolder  ) 
+    const char* arith_text_path ,
+    const char* inputs_text_path ,
+    const char* DocumentFolder  ) 
 {
 
     libff::start_profiling();
@@ -91,20 +75,18 @@ int CsubActivity_FromApp(
     }
     
 
-    printf("\n%s\n", arith_text_content  );
-    printf("\n%s\n", inputs_text_content  );
+    printf("\n%s\n", arith_text_path  );
+    printf("\n%s\n", inputs_text_path  );
 
     // Read the circuit, evaluate, and translate constraints
-
-    //CircuitReader reader(path1, path2, pb);
-    istringstream arithIsstream (arith_text_content) ;
-    istringstream inputsIsstream (inputs_text_content) ;
-    CircuitReader reader(arithIsstream, inputsIsstream, pb);
+    CircuitReader reader(arith_text_path, inputs_text_path, pb);
     LOGD("circuit read done");
     
     
+    r1cs_constraint_system<FieldT> cs = 
+        get_constraint_system_from_gadgetlib2(*pb);
+        //get_constraint_system_from_gadgetlib2_multi_threaded(*pb);
 
-    r1cs_constraint_system<FieldT> cs = get_constraint_system_from_gadgetlib2(*pb);
     const r1cs_variable_assignment<FieldT> full_assignment =
             get_variable_assignment_from_gadgetlib2(*pb);
     cs.primary_input_size = reader.getNumInputs() + reader.getNumOutputs();

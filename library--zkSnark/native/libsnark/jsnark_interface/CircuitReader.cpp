@@ -5,19 +5,12 @@
  */
 
 #include "CircuitReader.hpp"
-
-#if defined(SYSTEM_NAME_iOS)
-    #include <logging.hpp>
-#elif defined(SYSTEM_NAME_ANDROID)
-    #include <android/log.h>
-    #define  LOG_TAG    "NDK_TEST"
-    #define  LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
-#endif
+#include <logging.hpp>
 
 
 CircuitReader::CircuitReader(
-		char* arithFilepath, 
-		char* inputsFilepath,
+		const char* arithFilepath, 
+		const char* inputsFilepath,
 		ProtoboardPtr pb) 
 {
 
@@ -36,34 +29,14 @@ CircuitReader::CircuitReader(
 	zeropMap.clear();
 	zeroPwires.clear();
 }
+ 
 
+void CircuitReader::parseAndEval(const char* arithFilepath, const char* inputsFilepath ) {
 
-CircuitReader::CircuitReader(
-		std::istringstream& arithIsstream , 
-		std::istringstream& inputsIsstream , 
-		ProtoboardPtr pb) 
-{
+	ifstream arithfs(arithFilepath, ifstream::in);
+	ifstream inputfs(inputsFilepath, ifstream::in);
+	string line;
 
-	this->pb = pb;
-	numWires = 0;
-	numInputs = numNizkInputs = numOutputs = 0;
-
-	parseAndEval(arithIsstream, inputsIsstream);
-	constructCircuit(arithIsstream);
-	mapValuesToProtoboard();
-
-	wireLinearCombinations.clear();
-	wireValues.clear();
-	variables.clear();
-	variableMap.clear();
-	zeropMap.clear();
-	zeroPwires.clear();
-}
-
-void CircuitReader::parseAndEval(char* arithFilepath, char* inputsFilepath) {
-
-	ifstream arithfs;
-	arithfs.open(arithFilepath);
 	if (!arithfs.good()) {
 		LOGD("Unable to open circuit file %s \n", arithFilepath);
 		exit(-1);
@@ -72,23 +45,20 @@ void CircuitReader::parseAndEval(char* arithFilepath, char* inputsFilepath) {
         LOGD("arith ok\n");
     }
 
-	ifstream inputfs(inputsFilepath, ifstream::in);
+    if (!inputfs.good()) {
+		LOGD("Unable to open circuit file %s \n", inputsFilepath);
+		exit(-1);
+	}
+	else{
+        LOGD("inputfs ok\n");
+    }
 
-	//parseAndEval ( arithfs , inputfs ) ;
-
-	inputfs.close();
-	arithfs.close();
-}
-
-void CircuitReader::parseAndEval(std::istringstream & arithfs , std::istringstream & inputfs ) {
 
 	LOGD("Parsing and Evaluating the circuit");
 
-	string line;
+
 	
-
 	getline(arithfs, line);
-
 	int ret = sscanf(line.c_str(), "total %u", &numWires);
 
 	if (ret != 1) {
@@ -121,7 +91,7 @@ void CircuitReader::parseAndEval(std::istringstream & arithfs , std::istringstre
 			}
 			delete[] inputStr;
 		}
-		//inputfs.close();
+		inputfs.close();
 	}
 
 	if (wireValues[0] != FieldT::one()) {
@@ -262,23 +232,17 @@ void CircuitReader::parseAndEval(std::istringstream & arithfs , std::istringstre
 		delete[] inputStr;
 		delete[] outputStr;
 	}
+
+	arithfs.close();
 	
 	// LOGD("\t Evaluation Done in %lf seconds \n", (double) (evalTime) * 1e-9);
  	LOGD("Parsing and Evaluating the circuit done");
 }
 
 
-void CircuitReader::constructCircuit(char* arithFilepath) {
+void CircuitReader::constructCircuit(const char* arithFilepath) {
 
 	ifstream ifs2(arithFilepath, ifstream::in);
-	//constructCircuit ( ifs2 );
-	ifs2.close();
-
-}
-
-void CircuitReader::constructCircuit(std::istringstream &  ifs2) {
-
-
 
 	LOGD("Translating Constraints ... ");
 
@@ -287,7 +251,7 @@ void CircuitReader::constructCircuit(std::istringstream &  ifs2) {
 	LOGD("NO PROCPS");
 	struct proc_t usage1, usage2;
 	look_up_our_self(&usage1);
-      #endif
+    #endif
 
 
 	unsigned int i;
@@ -325,10 +289,10 @@ void CircuitReader::constructCircuit(std::istringstream &  ifs2) {
 	int lineCount = 0;
 	while (getline(ifs2, line)) {
 		lineCount++;
-		LOGD("%d : %s", lineCount, line.c_str());
-//		if (lineCount % 100000 == 0) {
-//			LOGD("At Line:: %d\n", lineCount);
-//		}
+		/*LOGD("%d : %s", lineCount, line.c_str());
+		if (lineCount % 100000 == 0) {
+			LOGD("At Line:: %d\n", lineCount);
+		}*/
 
 		if (line.length() == 0) {
 			continue;
@@ -380,6 +344,7 @@ void CircuitReader::constructCircuit(std::istringstream &  ifs2) {
 		clean();
 	}
 
+	ifs2.close() ;
 
 	LOGD("\tConstraint translation done\n");
 

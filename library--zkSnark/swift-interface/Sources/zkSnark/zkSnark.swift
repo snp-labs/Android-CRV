@@ -56,24 +56,36 @@ public func testSnark(  test_task : Int , test_mode : Int ) -> Void {
     print (" selected task : \(test_task) ")
     print (" selected mode : \(test_mode) ")
     
-     
-    let content1 = textResourceToCCharPtr(forResource: ArithName , withExtension: "dat" )
-    if !content1.good() { return }
-    //content1.dumpContent()
-    
-    let content2 = textResourceToCCharPtr(forResource: InputsName , withExtension: "dat" ) ;
-    if !content2.good() { return }
-    //content2.dumpContent()
-    
-    
     // Call native function
-    let rtn = CsubActivity_FromApp(task, mode, content1.CCharPtr() , content2.CCharPtr() , DocDir().CCharPtr() )
+    let rtn = CsubActivity_FromApp(task, mode,
+                                   FilePath(ArithName,"dat").CCharPtr() ,
+                                   FilePath(InputsName,"dat").CCharPtr() ,
+                                   DocDir().CCharPtr() )
     
     print ("\n\n CsubActivity_FromApp:\(rtn)")
     
 }
 
 
+
+class FilePath {
+    
+    var NSfileContent : NSString = ""
+    
+    init( _ forResource : String , _ ofType : String  ) {
+        
+        if let path = Bundle.module.path (forResource: forResource , ofType: ofType ) {
+            print ("[\(forResource).\(ofType)] @ [\(path)]" )
+            NSfileContent = path as NSString
+        }else{
+            print (" File [\(forResource).\(ofType)] not found" )
+        }
+    }
+    
+    public func CCharPtr() -> UnsafeMutablePointer<CChar>? {
+        return UnsafeMutablePointer<CChar>(mutating: NSfileContent.utf8String )
+    }
+}
 
 class DocDir {
     
@@ -90,59 +102,4 @@ class DocDir {
     }
 }
 
-
-class textResourceToCCharPtr {
-    
-    var forResource : String
-    var withExtension : String
-    var NSfileContent : NSString = ""
-    var fileName : String = ""
-    var fail : Bool = true
-    
-    init(forResource : String , withExtension : String ) {
-        self.forResource = forResource
-        self.withExtension = withExtension
-        self.fileName = "\(forResource).\(withExtension)"
-        self.loadContent()
-    }
-    
-    public func good() -> Bool {
-        return !fail
-    }
-    
-    func loadContent() {
-        
-        var fileContent : String = ""
-        
-        
-        if let FileURL = Bundle.module.url(forResource: forResource , withExtension: withExtension ) {
-            
-            do {
-                fileContent = try String(contentsOf: FileURL)
-            }catch{
-                print (" Could not load File [\(fileName)]" )
-            }
-            
-        }else{
-            print (" File [\(fileName)] not found" )
-        }
-        
-        NSfileContent = fileContent as NSString
-        fail = false
-    }
-    
-    public func reLoadContent() {
-        loadContent()
-    }
-    
-    public func dumpContent() {
-        print ("\n\n ---- Content of [\(fileName)] ----- ")
-        print ("\(NSfileContent)")
-        print (" ---- End of [\(fileName)] ----- \n\n")
-    }
-    
-    public func CCharPtr() -> UnsafeMutablePointer<CChar>? {
-        return UnsafeMutablePointer<CChar>(mutating: NSfileContent.utf8String )
-    }
-
-}
+ 

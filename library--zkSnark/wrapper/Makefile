@@ -6,8 +6,9 @@ include ../native/Makefile
 #
 # 	ReBuild Wrapper
 #
-WRAPPER_OBJS    =  build_env/${target}/${scheme}/wrapper.cpp.o  
-WRAPPER_AR      := build_env/${target}/${scheme}/libsnark-wrapper.a 
+WRAPPER_BUILD_DIR	:=build_env/${scheme}_${target}
+WRAPPER_OBJS        :=${WRAPPER_BUILD_DIR}/wrapper.cpp.o  
+WRAPPER_AR          :=${WRAPPER_BUILD_DIR}/libsnark-wrapper.a 
 
 make_wrapper_obj : check_target_arg  ;
 	clang++ -c  \
@@ -15,13 +16,13 @@ make_wrapper_obj : check_target_arg  ;
     ${MAKE_CXXFLAGS} \
     -I${PWD} \
     -I${PWD}/../native \
-    -I${PWD}/../native/lib/$(target)/include \
+    -I${PWD}/../native/lib/${scheme}_${target}/include \
     -I${PWD}/../native/depends/libff \
     -I${PWD}/../native/depends/libfqfft \
     ${SRC} \
     -o ${OBJ} 
 
-build_env/${target}/${scheme}/wrapper.cpp.o : wrapper.cpp ;
+${WRAPPER_BUILD_DIR}/wrapper.cpp.o : wrapper.cpp ${WRAPPER_BUILD_DIR} ;
 	make make_wrapper_obj target=${target} scheme=${scheme} SRC=$< OBJ=$@ 
 
 ${WRAPPER_AR} : ${WRAPPER_OBJS} ;
@@ -29,32 +30,26 @@ ${WRAPPER_AR} : ${WRAPPER_OBJS} ;
 
 install_wrapper_link_lib :  
 	libtool -static \
-        build_env/ios/release/libsnark-wrapper.a \
-        build_env/ios_sim/release/libsnark-wrapper.a \
+        build_env/release_ios/libsnark-wrapper.a \
+        build_env/release_ios_sim/libsnark-wrapper.a \
         -o ../archive-release/libsnark-wrapper.a
 	libtool -static \
-        build_env/ios/debug/libsnark-wrapper.a \
-        build_env/ios_sim/debug/libsnark-wrapper.a \
+        build_env/debug_ios/libsnark-wrapper.a \
+        build_env/debug_ios_sim/libsnark-wrapper.a \
         -o ../archive-debug/libsnark-wrapper.a
+
+batch_build_wrapper :
+	make scheme=release target=ios     build_env/release_ios/libsnark-wrapper.a 
+	make scheme=release target=ios_sim build_env/release_ios_sim/libsnark-wrapper.a 
+	make scheme=debug   target=ios     build_env/debug_ios/libsnark-wrapper.a 
+	make scheme=debug   target=ios_sim build_env/debug_ios_sim/libsnark-wrapper.a 
+	make install_wrapper_link_lib
+
+
 
 
 clean_wrapper :
-	rm -rf build_env/ios 
-	rm -rf build_env/ios_sim 
-	make make_dir
+    rm -rf build_env/ios 
+    rm -rf build_env/ios_sim 
 
-make_dir :
-	mkdir -p build_env/ios
-	mkdir -p build_env/ios/release
-	mkdir -p build_env/ios/debug
-	mkdir -p build_env/ios_sim
-	mkdir -p build_env/ios_sim/release
-	mkdir -p build_env/ios_sim/debug
-
-batch_build_wrapper :
-	@scheme=release target=ios     ; make scheme=$$scheme target=$$target build_env/$$target/$$scheme/libsnark-wrapper.a 
-	@scheme=release target=ios_sim ; make scheme=$$scheme target=$$target build_env/$$target/$$scheme/libsnark-wrapper.a 
-	@scheme=debug   target=ios     ; make scheme=$$scheme target=$$target build_env/$$target/$$scheme/libsnark-wrapper.a 
-	@scheme=debug   target=ios_sim ; make scheme=$$scheme target=$$target build_env/$$target/$$scheme/libsnark-wrapper.a 
-	@make install_wrapper_link_lib
 
