@@ -28,3 +28,19 @@ Project Structure
 -   __NDK VERSION__ : 21.3.6528147
 -   __Android Gradle__ Plugin Version : 4.0.1
 -   __Gradle Version__ : 6.1.1
+
+--------------------------------------------------------------------------------
+Verify using Libsnark library
+--------------------------------------------------------------------------------
+
+use https://github.com/snp-labs/CRV
+
+build libsnark library as command
+
+cmake -DCURVE=ALT_BN128 -DWITH_PROCPS=OFF -DWITH_SUPERCOP=OFF -DMULTICORE=OFF -DUSE_ASM=OFF -DBINARY_OUTPUT=ON -DMONTGOMERY_OUTPUT=OFF ..
+
+these cmake options must be defined to use CRS and proofs derived from Android
+
+copy your CRS and proofs to ~/your-workspace/CRV/JsnarkCircuitBuilder/datafiles
+
+use command described in link above to run libsnark library
