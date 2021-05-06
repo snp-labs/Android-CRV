@@ -248,7 +248,7 @@ public class VoteActivity extends AppCompatActivity implements IngCandidateAdapt
                             String sk = et_pwd.getText().toString();
                             //connect("vote");
                             int msg;
-                            String voted_status=null, snark_status = null;
+                            String voted_status=null, snark_status = null, send_status=null;
                             try {
                                 msg = candidates.get(voted_position).getCandidate_id();
                                 snark_status = encrypt_vote(msg);
@@ -256,6 +256,9 @@ public class VoteActivity extends AppCompatActivity implements IngCandidateAdapt
                             try{
                                 voted_status = new connect().execute("vote").get();
                             } catch (Exception e){Log.d("exception", e.toString());}
+                            try{
+                                send_status = new connect().execute("sendvk").get();
+                            } catch(Exception e){Log.d("exception", e.toString());}
 
 //                            Toast.makeText(getApplicationContext(), voted_status, Toast.LENGTH_SHORT).show();
                             setResult(RESULT_OK, finishintent);
@@ -562,6 +565,98 @@ public class VoteActivity extends AppCompatActivity implements IngCandidateAdapt
 
                 }
             }
+            else if (strings[0].equals("sendvk")) {
+                try {
+                    String boundary = "*****";
+                    String lineEnd = "\r\n";
+                    String twoHyphens = "--";
+                    String filename = "/data/data/com.example.snarkportingtest/files/vote_CRS_vk.dat";
+                    String str;
+                    URL url = new URL("http://222.111.165.26:8080/vote_mobile.php");
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    //conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+                    conn.setRequestProperty("Connection", "Keep-Alive");
+
+                    conn.setRequestProperty("ENCTYPE", "multipart/form-data");
+
+                    conn.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                    conn.setRequestProperty("uploaded_file", filename);
+
+
+                    conn.setRequestMethod("POST");
+                    conn.setDoInput(true);
+                    conn.connect();
+
+//                    sendMsg = "mode=" + strings[0];
+//                    Log.d("send msg", sendMsg);//                    OutputStream outs = conn.getOutputStream();
+//                    outs.write(sendMsg.getBytes("UTF-8"));
+//                    outs.flush();
+//                    outs.close();
+                    dos = new DataOutputStream(conn.getOutputStream());
+                    dos.writeBytes(twoHyphens + boundary + lineEnd);
+                    dos.writeBytes("Content-Disposition: form-data; name=\"mode\"" + lineEnd);
+                    dos.writeBytes(lineEnd);
+                    dos.writeBytes("vote");
+                    dos.writeBytes(lineEnd);
+
+                    dos.writeBytes(twoHyphens + boundary + lineEnd);
+                    dos.writeBytes("Content-Disposition: form-data; name=\"vote_name\"" + lineEnd);
+                    dos.writeBytes(lineEnd);
+                    Log.d("vote_id", String.valueOf(vote_id));
+                    dos.writeBytes(String.valueOf(vote_id));
+                    dos.writeBytes(lineEnd);
+
+                    // 이미지 전송
+                    dos.writeBytes(twoHyphens + boundary + lineEnd);
+                    dos.writeBytes("Content-Disposition: form-data; name=\"uploaded_file\"; filename=\"" + filename + "\"" + lineEnd);
+                    dos.writeBytes(lineEnd);
+                    FileInputStream mFileInputStream = new FileInputStream(filename);
+
+                    int bytesAvailable = mFileInputStream.available();
+                    int maxBufferSize = 1024;
+                    int bufferSize = Math.min(bytesAvailable, maxBufferSize);
+
+                    byte[] buffer = new byte[bufferSize];
+                    int bytesRead = mFileInputStream.read(buffer, 0, bufferSize);
+
+                    //Log.d("Test", "reimage byte is " + bytesRead);
+
+                    // read image
+                    while (bytesRead > 0) {
+                        dos.write(buffer, 0, bufferSize);
+                        bytesAvailable = mFileInputStream.available();
+                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                        bytesRead = mFileInputStream.read(buffer, 0, bufferSize);
+                    }
+
+                    dos.writeBytes(lineEnd);
+                    dos.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+                    // close streams
+                    Log.d("connect" , "File is written");
+                    mFileInputStream.close();
+                    dos.flush();
+
+                    if (conn.getResponseCode() == conn.HTTP_OK) {
+                        InputStreamReader tmp = new InputStreamReader(conn.getInputStream(), "UTF-8");
+                        BufferedReader reader = new BufferedReader(tmp);
+                        StringBuffer buffer1 = new StringBuffer();
+                        while ((str = reader.readLine()) != null) {
+                            buffer1.append(str);
+                        }
+                        receiveMsg = buffer1.toString();
+                        Log.e("received message", receiveMsg);
+                    } else {
+                        Log.i("통신 결과", conn.getResponseCode() + "에러");
+                    }
+
+                } catch (Exception e) {
+                    Log.d("httperror", e.toString());
+
+                }
+            }
             finishintent.putExtra("voted", voted);
             finishintent.putExtra("title", tv_votedetailtitle.getText());
             return receiveMsg;
@@ -731,7 +826,7 @@ public class VoteActivity extends AppCompatActivity implements IngCandidateAdapt
 
         BigInteger G = null, S = null, U = null, T = null;
         BigInteger rand = new BigInteger("1231231212312542673123124124879879879817259871293845798123754981237549312324");
-        String inFilePath = "/data/data/com.example.snarkportingtest/files/votein.txt";
+        String inFilePath = "/data/data/com.example.snarkportingtest/files/votein.dat";
         FileReader fileReader = null;
         BufferedReader scanner = null;
         int counter = 0;
@@ -953,7 +1048,7 @@ public class VoteActivity extends AppCompatActivity implements IngCandidateAdapt
         Intent intent = new Intent(VoteActivity.this, SubActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra("task","vote");
-        intent.putExtra("mode","all");
+        intent.putExtra("mode","run");
         startActivityForResult(intent, 888);
         Log.d("enc done", "enc done");
         return "succ";

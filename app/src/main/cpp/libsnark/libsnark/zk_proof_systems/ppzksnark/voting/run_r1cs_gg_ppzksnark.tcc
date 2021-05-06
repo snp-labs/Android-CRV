@@ -87,9 +87,7 @@ void run_r1cs_gg_ppzksnark_setup(const r1cs_example<libff::Fr<ppT> > &example,
 
     name1 = "/data/data/com.example.snarkportingtest/files/" + name + "_CRS_pk.dat";
     name2 = "/data/data/com.example.snarkportingtest/files/" + name + "_CRS_vk.dat";
-//    fs::permissions(name1,fs::perms::owner_all | fs::perms::group_all,
-//                    fs::perm_options::add);
-    LOGD("permission changed");
+
     std::ofstream crs_pk_outfile(name1, ios::trunc | ios::out | ios::binary);
     
     std::ofstream crs_vk_outfile(name2, ios::trunc | ios::out | ios::binary);
@@ -161,25 +159,31 @@ bool run_r1cs_gg_ppzksnark_verify(const r1cs_example<libff::Fr<ppT> > &example,
     LOGD("GG-ppzkSNARK CRS In file");
     r1cs_gg_ppzksnark_keypair<ppT> keypair;
     string name1, name2, name3;
-    name1 = "/data/data/com.example.snarkportingtest/files/" + name + "_CRS_pk.dat";
+
     name2 = "/data/data/com.example.snarkportingtest/files/" + name + "_CRS_vk.dat";
 
     name3 = "/data/data/com.example.snarkportingtest/files/" +  name + "_Proof.dat";
-
-    std::ifstream crs_pk_infile(name1.c_str(), ios::in);
-    std::ifstream crs_vk_infile(name2.c_str(), ios::in);
-    std::ifstream proof_infile(name3.c_str(), ios::in);
-
-    crs_pk_infile >> keypair.pk; crs_pk_infile.close();
-    crs_vk_infile >> keypair.vk; crs_vk_infile.close();
-
+    LOGD("%s", name2.c_str());
+    std::ifstream crs_vk_infile(name2.c_str(), ios::in | ios::binary);
+    std::ifstream proof_infile(name3.c_str(), ios::in | ios::binary);
     r1cs_gg_ppzksnark_proof<ppT> proof;
     proof_infile >> proof;
+    if(crs_vk_infile.is_open()) {
+        LOGD("vk is open");
+        crs_vk_infile >> keypair.vk;
+        LOGD("vk in");
+        crs_vk_infile.close();
+    }
+    else
+        LOGD("not open vk");
+
+//    r1cs_gg_ppzksnark_proof<ppT> proof;
+//    proof_infile >> proof;
     proof_infile.close();
     LOGD("Preprocess verification key");
     r1cs_gg_ppzksnark_processed_verification_key<ppT> pvk = r1cs_gg_ppzksnark_verifier_process_vk<ppT>(keypair.vk);
 
-    pvk = libff::reserialize<r1cs_gg_ppzksnark_processed_verification_key<ppT> >(pvk);
+    pvk = libff::reserialize<r1cs_gg_ppzksnark_processed_verification_key<ppT>>(pvk);
 
     LOGD("R1CS GG-ppzkSNARK Verifier");
     const bool ans = r1cs_gg_ppzksnark_verifier_strong_IC<ppT>(keypair.vk, example.primary_input, proof);
@@ -187,8 +191,8 @@ bool run_r1cs_gg_ppzksnark_verify(const r1cs_example<libff::Fr<ppT> > &example,
     LOGD("* The verification result is: %s\n", (ans ? "PASS" : "FAIL"));
 
     LOGD("R1CS GG-ppzkSNARK Online Verifier");
-    const bool ans2 = r1cs_gg_ppzksnark_online_verifier_strong_IC<ppT>(pvk, example.primary_input, proof);
-    assert(ans == ans2);
+    //const bool ans2 = r1cs_gg_ppzksnark_online_verifier_strong_IC<ppT>(pvk, example.primary_input, proof);
+    //assert(ans == ans2);
 
     test_affine_verifier<ppT>(keypair.vk, example.primary_input, proof, ans);
 

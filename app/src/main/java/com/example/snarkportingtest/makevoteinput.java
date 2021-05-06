@@ -91,9 +91,9 @@ public class makevoteinput extends AppCompatActivity {
             String line = null;
             try {
 
-                CopyIfNotExist(R.raw.votein, inFilePath + ".txt");
-                fileReader = new FileReader(new File(inFilePath + ".txt"));
-                filetmp = new File(inFilePath + "tmp.txt");
+                CopyIfNotExist(R.raw.votein, inFilePath + ".dat");
+                fileReader = new FileReader(new File(inFilePath + ".dat"));
+                filetmp = new File(inFilePath + "tmp.dat");
                 fwTmp = new PrintWriter(filetmp);
                 scanner = new BufferedReader(fileReader);
                 while ((line = scanner.readLine()) != null) {
@@ -121,8 +121,8 @@ public class makevoteinput extends AppCompatActivity {
             String[] values = (String[]) intent.getExtras().get("values");
 
             try {
-                fileReader = new FileReader(new File(inFilePath + ".txt"));
-                filetmp = new File(inFilePath + "tmp.txt");
+                fileReader = new FileReader(new File(inFilePath + ".dat"));
+                filetmp = new File(inFilePath + "tmp.dat");
                 fwTmp = new PrintWriter(filetmp);
                 scanner = new BufferedReader(fileReader);
                 while ((line = scanner.readLine()) != null) {
@@ -150,7 +150,7 @@ public class makevoteinput extends AppCompatActivity {
         else {
             Log.d("no pp", "sibal");
         }
-        filetmp.renameTo(new File(inFilePath+".txt"));
+        filetmp.renameTo(new File(inFilePath+".dat"));
         finish();
     }
 
